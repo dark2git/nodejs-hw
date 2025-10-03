@@ -38,13 +38,6 @@ app.get('/', (req, res) => {
   res.status(200).json({ message: 'Hello world!' });
 });
 
-// GET-запит до маршруту "/health"
-app.get('/health', (req, res) => {
-  res.status(200).json({
-    status: 'Ok!',
-  });
-});
-
 app.get('/notes', (req, res) => {
   res.status(200).json({
     message: 'Retrieved all notes!',
