@@ -1,8 +1,12 @@
 // src/server.js
 import express from 'express';
 import cors from 'cors';
-import pino from 'pino-http';
 import 'dotenv/config';
+import { connectMongoDB } from './db/connectMongoDB.js';
+import { logger } from './middleware/logger.js';
+import { notFoundHandler } from './middleware/notFoundHandler.js';
+import { errorHandler } from './middleware/errorHandler.js';
+import notesRoutes from './routes/notesRoutes.js';
 
 const app = express();
 const PORT = process.env.PORT ?? 3030;
@@ -13,43 +17,14 @@ app.use((req, res, next) => {
   next();
 });
 
-// Middleware для парсингу JSON
-app.use(express.json());
-app.use(cors()); // Дозволяє запити з будь-яких джерел
-app.use(
-  pino({
-    level: 'info',
-    transport: {
-      target: 'pino-pretty',
-      options: {
-        colorize: true,
-        translateTime: 'HH:MM:ss',
-        ignore: 'pid,hostname',
-        messageFormat:
-          '{req.method} {req.url} {res.statusCode} - {responseTime}ms',
-        hideObject: true,
-      },
-    },
-  }),
-);
+// Глобальні middleware
+app.use(logger); // 1. Логер першим — бачить усі запити
+app.use(express.json()); // 2. Парсинг JSON-тіла
+app.use(cors()); // 3. Дозвіл для запитів з інших доменів
 
 // Перший маршрут
 app.get('/', (req, res) => {
   res.status(200).json({ message: 'Hello world!' });
-});
-
-app.get('/notes', (req, res) => {
-  res.status(200).json({
-    message: 'Retrieved all notes!',
-  });
-});
-
-// Конкретний користувач за id
-app.get('/notes/:noteId', (req, res) => {
-  const noteId = parseInt(req.params.noteId); // Перетворюємо id з рядка на число
-  res.status(200).json({
-    message: `Retrieved note with ID: ${noteId}.`,
-  });
 });
 
 // Маршрут для тестування middleware помилки
@@ -58,25 +33,15 @@ app.get('/test-error', (req, res) => {
   throw new Error('Simulated server error');
 });
 
-// Middleware 404 (після всіх маршрутів)
-app.use((req, res) => {
-  res.status(404).json({ message: 'Route not found' });
-});
+// підключаємо групу маршрутів нотаток
+app.use(notesRoutes);
 
-// Middleware для обробки помилок
-// бо Якщо не додати error middleware, сервер просто завершить запит без відповіді, а клієнт отримає «завислий» запит.
-// Middleware для обробки помилок
-app.use((err, req, res, next) => {
-  console.error(err);
+// 404 і обробник помилок — наприкінці ланцюжка
+app.use(notFoundHandler);
+app.use(errorHandler);
 
-  const isProd = process.env.NODE_ENV === 'production';
-
-  res.status(500).json({
-    message: isProd
-      ? 'Something went wrong. Please try again later.'
-      : err.message,
-  });
-});
+// підключення до MongoDB
+await connectMongoDB();
 
 // Запуск сервера
 app.listen(PORT, () => {
