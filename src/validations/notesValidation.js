@@ -59,7 +59,7 @@ export const createNoteSchema = {
     }),
     tag: Joi.string()
       .lowercase()
-      .valid(...lowerTags)
+      .valid(...TAGS) //value must match exactly one of TAGS
       .messages({
         'any.only': `Tag must be one of: ${TAGS.join(', ')}`,
       }),
