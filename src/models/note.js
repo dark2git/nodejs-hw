@@ -1,7 +1,7 @@
 // src/models/note.js
 
-import { Schema } from 'mongoose';
-import { model } from 'mongoose';
+import { Schema, model } from 'mongoose';
+import { TAGS } from '../constants/tags.js';
 
 const noteSchema = new Schema(
   {
@@ -19,24 +19,23 @@ const noteSchema = new Schema(
     tag: {
       type: String,
       required: false,
-      enum: [
-        'Work',
-        'Personal',
-        'Meeting',
-        'Shopping',
-        'Ideas',
-        'Travel',
-        'Finance',
-        'Health',
-        'Important',
-        'Todo',
-      ],
-      default: 'Todo',
+      enum: TAGS, // Змінна TAGS з констант
+      default: TAGS.includes('Todo') ? 'Todo' : TAGS[0],
     },
   },
   {
     timestamps: true,
     versionKey: false,
+  },
+);
+
+// Додаємо текстовий індекс: кажемо MongoDB, що по полю title & content можна робити $text
+noteSchema.index(
+  { title: 'text', content: 'text' },
+  {
+    name: 'NoteTextIndex',
+    weights: { title: 10, content: 5 },
+    default_language: 'english',
   },
 );
 

@@ -3,13 +3,47 @@
 import { Note } from '../models/note.js';
 import createHttpError from 'http-errors';
 
-// Отримати список усіх студентів
+// Отримати список усіх нотаток
 export const getNotes = async (req, res) => {
-  const notes = await Note.find();
-  res.status(200).json(notes);
+  const {
+    page = 1,
+    perPage = 10,
+    tag,
+    search,
+    sortBy = '_id',
+    sortOrder = 'asc',
+  } = req.query;
+  const skip = (page - 1) * perPage;
+  const notesQuery = Note.find();
+  // Текстовий пошук по title та content (працює лише якщо створено текстовий індекс)
+  if (search) {
+    notesQuery.where({
+      $text: { $search: search },
+    });
+  }
+  // Будуємо фільтр
+  if (tag) {
+    notesQuery.where('tag').regex(new RegExp(`^${tag}$`, 'i'));
+  }
+  // Пагінація та сортування
+  const [totalItems, notes] = await Promise.all([
+    notesQuery.clone().countDocuments(),
+    notesQuery
+      .skip(skip)
+      .limit(perPage)
+      .sort({ [sortBy]: sortOrder }),
+  ]);
+  const totalPages = Math.ceil(totalItems / perPage);
+  res.status(200).json({
+    page: Number(page),
+    perPage: Number(perPage),
+    totalItems,
+    totalPages,
+    notes,
+  });
 };
 
-// Отримати одного студента за id
+// Отримати одну нотатку за id
 export const getNoteById = async (req, res, next) => {
   const { noteId } = req.params;
   const note = await Note.findById(noteId);
@@ -22,13 +56,13 @@ export const getNoteById = async (req, res, next) => {
   res.status(200).json(note);
 };
 
-// Створити нового студента
+// Створити нову нотатку
 export const createNote = async (req, res) => {
   const note = await Note.create(req.body);
   res.status(201).json(note);
 };
 
-//Видалити студента
+//Видалити нотатку
 export const deleteNote = async (req, res, next) => {
   const { noteId } = req.params;
   const note = await Note.findOneAndDelete({
@@ -42,7 +76,7 @@ export const deleteNote = async (req, res, next) => {
   res.status(200).json(note);
 };
 
-// Оновити інформацію про студента
+// Оновити інформацію про нотатку
 export const updateNote = async (req, res, next) => {
   const { noteId } = req.params;
   const note = await Note.findOneAndUpdate(
@@ -55,4 +89,22 @@ export const updateNote = async (req, res, next) => {
     return;
   }
   res.status(200).json(note);
+};
+
+// Отримати нотатки за категорією
+export const getNotesByCategory = async (req, res, next) => {
+  const { category } = req.params;
+
+  try {
+    // case-insensitive match — працює незалежно від регістру в DB
+    const notes = await Note.find({ tag: new RegExp(`^${category}$`, 'i') });
+
+    if (!notes || notes.length === 0) {
+      return next(createHttpError(404, 'Category not found'));
+    }
+
+    return res.status(200).json(notes);
+  } catch (err) {
+    return next(err);
+  }
 };
