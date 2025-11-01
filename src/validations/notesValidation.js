@@ -58,8 +58,7 @@ export const createNoteSchema = {
       'string.base': 'Content must be a string',
     }),
     tag: Joi.string()
-      .lowercase()
-      .valid(...TAGS) //value must match exactly one of TAGS
+      .valid(...TAGS) //strict validation with original case
       .messages({
         'any.only': `Tag must be one of: ${TAGS.join(', ')}`,
       }),
@@ -72,8 +71,6 @@ export const updateNoteSchema = {
   [Segments.BODY]: Joi.object({
     title: Joi.string().min(1),
     content: Joi.string().trim().allow(''),
-    tag: Joi.string()
-      .lowercase()
-      .valid(...lowerTags),
+    tag: Joi.string().valid(...TAGS), //strict validation with original case
   }).min(1), // хоча б одне поле має бути присутнім
 };
