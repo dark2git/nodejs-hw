@@ -14,7 +14,8 @@ export const getNotes = async (req, res) => {
     sortOrder = 'asc',
   } = req.query;
   const skip = (page - 1) * perPage;
-  const notesQuery = Note.find();
+  //Повертаємо тільки нотатки поточного користувача
+  const notesQuery = Note.find({ userId: req.user._id });
   // Текстовий пошук по title та content (працює лише якщо створено текстовий індекс)
   if (search) {
     notesQuery.where({
@@ -46,7 +47,11 @@ export const getNotes = async (req, res) => {
 // Отримати одну нотатку за id
 export const getNoteById = async (req, res, next) => {
   const { noteId } = req.params;
-  const note = await Note.findById(noteId);
+  const note = await Note.findOne({
+    _id: noteId,
+    // Повертаємо тільки нотатку поточного користувача
+    userId: req.user._id,
+  });
 
   if (!note) {
     next(createHttpError(404, 'Note not found'));
@@ -58,7 +63,11 @@ export const getNoteById = async (req, res, next) => {
 
 // Створити нову нотатку
 export const createNote = async (req, res) => {
-  const note = await Note.create(req.body);
+  const note = await Note.create({
+    ...req.body,
+    // Додаємо властивість userId з об'єкта запиту
+    userId: req.user._id,
+  });
   res.status(201).json(note);
 };
 
@@ -67,6 +76,8 @@ export const deleteNote = async (req, res, next) => {
   const { noteId } = req.params;
   const note = await Note.findOneAndDelete({
     _id: noteId,
+    // Критерій пошуку по userId
+    userId: req.user._id,
   });
 
   if (!note) {
@@ -80,7 +91,7 @@ export const deleteNote = async (req, res, next) => {
 export const updateNote = async (req, res, next) => {
   const { noteId } = req.params;
   const note = await Note.findOneAndUpdate(
-    { _id: noteId }, // Шукаємо по id
+    { _id: noteId, userId: req.user._id }, // критерій пошуку по userId
     req.body,
     { new: true }, // повертаємо оновлений документ
   );
@@ -93,11 +104,13 @@ export const updateNote = async (req, res, next) => {
 
 // Отримати нотатки за категорією
 export const getNotesByCategory = async (req, res, next) => {
-  const { category } = req.params;
-
   try {
-    // case-insensitive match — працює незалежно від регістру в DB
-    const notes = await Note.find({ tag: new RegExp(`^${category}$`, 'i') });
+    const { category } = req.params;
+    // case-insensitive match — працює незалежно від регістру в DB та в запиті
+    const notes = await Note.find({
+      userId: req.user._id,
+      tag: new RegExp(`^${category}$`, 'i'),
+    });
 
     if (!notes || notes.length === 0) {
       return next(createHttpError(404, 'Category not found'));
