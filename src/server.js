@@ -10,7 +10,7 @@ import notesRoutes from './routes/notesRoutes.js';
 import helmet from 'helmet';
 
 const app = express();
-const PORT = process.env.PORT ?? 3030;
+const PORT = process.env.PORT ?? 3000;
 
 // Логування часу
 app.use((req, res, next) => {
@@ -20,7 +20,7 @@ app.use((req, res, next) => {
 
 // Глобальні middleware
 app.use(logger); // 1. Логер першим — бачить усі запити
-app.use(express.json({ limit: '10mb' })); // 2. Парсинг JSON-тіла з обмеженням розміру для безпеки
+app.use(express.json()); // 2. Парсинг JSON-тіла
 app.use(
   cors({
     methods: ['GET', 'POST', 'PATCH', 'DELETE', 'OPTIONS'],
@@ -53,6 +53,3 @@ await connectMongoDB();
 app.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);
 });
-// added helmet for security headers
-// added cors with specific methods
-//rebased controllers for newer express version
