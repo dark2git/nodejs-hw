@@ -7,6 +7,7 @@ import { logger } from './middleware/logger.js';
 import { notFoundHandler } from './middleware/notFoundHandler.js';
 import { errorHandler } from './middleware/errorHandler.js';
 import notesRoutes from './routes/notesRoutes.js';
+import helmet from 'helmet';
 
 const app = express();
 const PORT = process.env.PORT ?? 3030;
@@ -19,8 +20,13 @@ app.use((req, res, next) => {
 
 // Глобальні middleware
 app.use(logger); // 1. Логер першим — бачить усі запити
-app.use(express.json()); // 2. Парсинг JSON-тіла
-app.use(cors()); // 3. Дозвіл для запитів з інших доменів
+app.use(express.json({ limit: '10mb' })); // 2. Парсинг JSON-тіла з обмеженням розміру для безпеки
+app.use(
+  cors({
+    methods: ['GET', 'POST', 'PATCH', 'DELETE', 'OPTIONS'],
+  }),
+); // 3. Дозвіл CORS-запитів з вказаними методами
+app.use(helmet()); // 4. Безпека HTTP-заголовків
 
 // Перший маршрут
 app.get('/', (req, res) => {
@@ -47,3 +53,6 @@ await connectMongoDB();
 app.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);
 });
+// added helmet for security headers
+// added cors with specific methods
+//rebased controllers for newer express version
