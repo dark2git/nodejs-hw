@@ -8,11 +8,9 @@ import {
   createNote,
   deleteNote,
   updateNote,
-  getNotesByCategory,
 } from '../controllers/notesController.js';
 import {
   createNoteSchema,
-  categoryParamSchema,
   noteIdSchema,
   updateNoteSchema,
   getAllNotesSchema,
@@ -22,13 +20,6 @@ const router = Router();
 
 router.get('/notes', celebrate(getAllNotesSchema), getAllNotes);
 router.post('/notes', celebrate(createNoteSchema), createNote);
-
-// category route MUST be before :noteId to avoid conflicts
-router.get(
-  '/notes/category/:category',
-  celebrate(categoryParamSchema),
-  getNotesByCategory,
-);
 
 // routes that expect an id
 router.get('/notes/:noteId', celebrate(noteIdSchema), getNoteById);
