@@ -8,30 +8,24 @@ import { logger } from './middleware/logger.js';
 import { notFoundHandler } from './middleware/notFoundHandler.js';
 import { errorHandler } from './middleware/errorHandler.js';
 import notesRoutes from './routes/notesRoutes.js';
+import helmet from 'helmet';
 
 const app = express();
-const PORT = process.env.PORT ?? 3030;
-
-// Логування часу
-app.use((req, res, next) => {
-  console.log(`Time: ${new Date().toLocaleString()}`);
-  next();
-});
+const PORT = process.env.PORT ?? 3000;
 
 // Глобальні middleware
 app.use(logger); // 1. Логер першим — бачить усі запити
 app.use(express.json()); // 2. Парсинг JSON-тіла
-app.use(cors()); // 3. Дозвіл для запитів з інших доменів
+app.use(
+  cors({
+    methods: ['GET', 'POST', 'PATCH', 'DELETE', 'OPTIONS'],
+  }),
+); // 3. Дозвіл CORS-запитів з вказаними методами
+app.use(helmet()); // 4. Безпека HTTP-заголовків
 
 // Перший маршрут
 app.get('/', (req, res) => {
   res.status(200).json({ message: 'Hello world!' });
-});
-
-// Маршрут для тестування middleware помилки
-app.get('/test-error', (req, res) => {
-  // Штучна помилка для прикладу
-  throw new Error('Simulated server error');
 });
 
 // підключаємо групу маршрутів нотаток

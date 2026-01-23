@@ -3,7 +3,7 @@
 import { Router } from 'express';
 import { celebrate } from 'celebrate';
 import {
-  getNotes,
+  getAllNotes,
   getNoteById,
   createNote,
   deleteNote,
@@ -20,7 +20,7 @@ import {
 
 const router = Router();
 
-router.get('/notes', celebrate(getAllNotesSchema), getNotes);
+router.get('/notes', celebrate(getAllNotesSchema), getAllNotes);
 router.post('/notes', celebrate(createNoteSchema), createNote);
 
 // category route MUST be before :noteId to avoid conflicts

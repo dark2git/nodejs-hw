@@ -67,7 +67,7 @@ export const createNoteSchema = {
 
 // Схема для оновлення нотатки — поєднуємо params + body
 export const updateNoteSchema = {
-  ...noteIdSchema,
+  ...noteIdSchema, // Це додає валідацію для params (noteId)
   [Segments.BODY]: Joi.object({
     title: Joi.string().min(1),
     content: Joi.string().trim().allow(''),

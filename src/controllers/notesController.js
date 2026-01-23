@@ -4,7 +4,7 @@ import { Note } from '../models/note.js';
 import createHttpError from 'http-errors';
 
 // Отримати список усіх нотаток
-export const getNotes = async (req, res) => {
+export const getAllNotes = async (req, res) => {
   const {
     page = 1,
     perPage = 10,
@@ -44,13 +44,12 @@ export const getNotes = async (req, res) => {
 };
 
 // Отримати одну нотатку за id
-export const getNoteById = async (req, res, next) => {
+export const getNoteById = async (req, res) => {
   const { noteId } = req.params;
   const note = await Note.findById(noteId);
 
   if (!note) {
-    next(createHttpError(404, 'Note not found'));
-    return;
+    throw createHttpError(404, 'Note not found');
   }
 
   res.status(200).json(note);
@@ -63,21 +62,20 @@ export const createNote = async (req, res) => {
 };
 
 //Видалити нотатку
-export const deleteNote = async (req, res, next) => {
+export const deleteNote = async (req, res) => {
   const { noteId } = req.params;
   const note = await Note.findOneAndDelete({
     _id: noteId,
   });
 
   if (!note) {
-    next(createHttpError(404, 'Note not found'));
-    return;
+    throw createHttpError(404, 'Note not found');
   }
   res.status(200).json(note);
 };
 
 // Оновити інформацію про нотатку
-export const updateNote = async (req, res, next) => {
+export const updateNote = async (req, res) => {
   const { noteId } = req.params;
   const note = await Note.findOneAndUpdate(
     { _id: noteId }, // Шукаємо по id
@@ -85,8 +83,7 @@ export const updateNote = async (req, res, next) => {
     { new: true }, // повертаємо оновлений документ
   );
   if (!note) {
-    next(createHttpError(404, 'Note not found'));
-    return;
+    throw createHttpError(404, 'Note not found');
   }
   res.status(200).json(note);
 };

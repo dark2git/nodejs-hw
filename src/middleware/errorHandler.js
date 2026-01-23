@@ -8,7 +8,7 @@ export const errorHandler = (err, req, res, next) => {
   // Якщо помилка створена через http-errors
   if (err instanceof HttpError) {
     return res.status(err.status).json({
-      error: err.message || err.name,
+      message: err.message || err.name,
     });
   }
   const isProd = process.env.NODE_ENV === 'production';

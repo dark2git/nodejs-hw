@@ -4,7 +4,7 @@ import { Note } from '../models/note.js';
 
 export const connectMongoDB = async () => {
   try {
-    const mongoUrl = process.env.MONGODB_URL;
+    const mongoUrl = process.env.MONGO_URL;
     await mongoose.connect(mongoUrl);
     console.log('MongoDB connection established successfully');
     // Гарантуємо, що індекси в БД відповідають схемі
