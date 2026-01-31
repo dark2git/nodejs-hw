@@ -4,7 +4,7 @@ import { Note } from '../models/note.js';
 import createHttpError from 'http-errors';
 
 // Отримати список усіх нотаток
-export const getNotes = async (req, res) => {
+export const getAllNotes = async (req, res) => {
   const {
     page = 1,
     perPage = 10,
@@ -27,25 +27,25 @@ export const getNotes = async (req, res) => {
     notesQuery.where('tag').regex(new RegExp(`^${tag}$`, 'i'));
   }
   // Пагінація та сортування
-  const [totalItems, notes] = await Promise.all([
+  const [totalNotes, notes] = await Promise.all([
     notesQuery.clone().countDocuments(),
     notesQuery
       .skip(skip)
       .limit(perPage)
       .sort({ [sortBy]: sortOrder }),
   ]);
-  const totalPages = Math.ceil(totalItems / perPage);
+  const totalPages = Math.ceil(totalNotes / perPage);
   res.status(200).json({
     page: Number(page),
     perPage: Number(perPage),
-    totalItems,
+    totalNotes,
     totalPages,
     notes,
   });
 };
 
 // Отримати одну нотатку за id
-export const getNoteById = async (req, res, next) => {
+export const getNoteById = async (req, res) => {
   const { noteId } = req.params;
   const note = await Note.findOne({
     _id: noteId,
@@ -54,8 +54,7 @@ export const getNoteById = async (req, res, next) => {
   });
 
   if (!note) {
-    next(createHttpError(404, 'Note not found'));
-    return;
+    throw createHttpError(404, 'Note not found');
   }
 
   res.status(200).json(note);
@@ -72,7 +71,7 @@ export const createNote = async (req, res) => {
 };
 
 //Видалити нотатку
-export const deleteNote = async (req, res, next) => {
+export const deleteNote = async (req, res) => {
   const { noteId } = req.params;
   const note = await Note.findOneAndDelete({
     _id: noteId,
@@ -81,14 +80,13 @@ export const deleteNote = async (req, res, next) => {
   });
 
   if (!note) {
-    next(createHttpError(404, 'Note not found'));
-    return;
+    throw createHttpError(404, 'Note not found');
   }
   res.status(200).json(note);
 };
 
 // Оновити інформацію про нотатку
-export const updateNote = async (req, res, next) => {
+export const updateNote = async (req, res) => {
   const { noteId } = req.params;
   const note = await Note.findOneAndUpdate(
     { _id: noteId, userId: req.user._id }, // критерій пошуку по userId
@@ -96,28 +94,7 @@ export const updateNote = async (req, res, next) => {
     { new: true }, // повертаємо оновлений документ
   );
   if (!note) {
-    next(createHttpError(404, 'Note not found'));
-    return;
+    throw createHttpError(404, 'Note not found');
   }
   res.status(200).json(note);
-};
-
-// Отримати нотатки за категорією
-export const getNotesByCategory = async (req, res, next) => {
-  try {
-    const { category } = req.params;
-    // case-insensitive match — працює незалежно від регістру в DB та в запиті
-    const notes = await Note.find({
-      userId: req.user._id,
-      tag: new RegExp(`^${category}$`, 'i'),
-    });
-
-    if (!notes || notes.length === 0) {
-      return next(createHttpError(404, 'Category not found'));
-    }
-
-    return res.status(200).json(notes);
-  } catch (err) {
-    return next(err);
-  }
 };

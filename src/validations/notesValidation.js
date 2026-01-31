@@ -36,16 +36,6 @@ export const noteIdSchema = {
   }),
 };
 
-// Додаємо схему для params (category)
-export const categoryParamSchema = {
-  [Segments.PARAMS]: Joi.object({
-    category: Joi.string()
-      .lowercase()
-      .valid(...lowerTags)
-      .required(),
-  }),
-};
-
 // Схема для створення нової нотатки
 export const createNoteSchema = {
   [Segments.BODY]: Joi.object({
