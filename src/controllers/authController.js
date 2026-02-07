@@ -41,12 +41,14 @@ export const loginUser = async (req, res, next) => {
   // перевірка юзера по емейлу
   const user = await User.findOne({ email });
   if (!user) {
-    return next(createHttpError(401, 'Invalid credentials'));
+    //return next(createHttpError(401, 'Invalid credentials'));
+    throw createHttpError(401, 'Invalid credentials');
   }
   // перевірка пароля
   const isValidPassword = await bcrypt.compare(password, user.password);
   if (!isValidPassword) {
-    return next(createHttpError(401, 'Invalid credentials'));
+    //return next(createHttpError(401, 'Invalid credentials'));
+    throw createHttpError(401, 'Invalid credentials');
   }
 
   // Видаляємо стару сесію користувача
@@ -76,7 +78,7 @@ export const logoutUser = async (req, res) => {
 };
 
 // Логіка оновлення сесії користувача
-export const refreshUserSession = async (req, res, next) => {
+export const refreshUserSession = async (req, res) => {
   // 1. Знаходимо поточну сесію за id сесії та рефреш токеном
   const session = await Session.findOne({
     _id: req.cookies.sessionId,
@@ -85,7 +87,7 @@ export const refreshUserSession = async (req, res, next) => {
 
   // 2. Якщо такої сесії нема, повертаємо помилку
   if (!session) {
-    return next(createHttpError(401, 'Session not found'));
+    throw createHttpError(401, 'Session not found');
   }
 
   // 3. Якщо сесія існує, перевіряємо валідність рефреш токена
@@ -94,7 +96,7 @@ export const refreshUserSession = async (req, res, next) => {
 
   // Якщо термін дії рефреш токена вийшов, повертаємо помилку
   if (isSessionTokenExpired) {
-    return next(createHttpError(401, 'Session token expired'));
+    throw createHttpError(401, 'Session token expired');
   }
 
   // 4. Якщо всі перевірки пройшли добре, видаляємо поточну сесію
@@ -117,15 +119,12 @@ export const requestResetEmail = async (req, res, next) => {
   const { email } = req.body;
 
   const user = await User.findOne({ email });
-  // Якщо користувача нема — навмисно повертаємо ту саму "успішну"
-  // відповідь без відправлення листа (anti user enumeration).
   if (!user) {
     return res.status(200).json({
       message: 'If this email exists, a reset link has been sent',
     });
   }
 
-  // Користувач є — генеруємо короткоживучий JWT і відправляємо лист
   const resetToken = jwt.sign(
     { sub: user._id, email },
     process.env.JWT_SECRET,
@@ -153,10 +152,10 @@ export const requestResetEmail = async (req, res, next) => {
       html,
     });
   } catch {
-    next(
-      createHttpError(500, 'Failed to send the email, please try again later.'),
+    throw createHttpError(
+      500,
+      'Failed to send the email, please try again later.',
     );
-    return;
   }
 
   res.status(200).json({
@@ -165,7 +164,7 @@ export const requestResetEmail = async (req, res, next) => {
 };
 
 // Логіка скидання пароля
-export const resetPassword = async (req, res, next) => {
+export const resetPassword = async (req, res) => {
   const { token, password } = req.body;
 
   // 1. Перевіряємо/декодуємо токен
@@ -174,15 +173,13 @@ export const resetPassword = async (req, res, next) => {
     payload = jwt.verify(token, process.env.JWT_SECRET);
   } catch {
     // Повертаємо помилку якщо проблема при декодуванні
-    next(createHttpError(401, 'Invalid or expired token'));
-    return;
+    throw createHttpError(401, 'Invalid or expired token');
   }
 
   // 2. Шукаємо користувача
   const user = await User.findOne({ _id: payload.sub, email: payload.email });
   if (!user) {
-    next(createHttpError(404, 'User not found'));
-    return;
+    throw createHttpError(404, 'User not found');
   }
 
   // 3. Якщо користувач існує
@@ -197,14 +194,4 @@ export const resetPassword = async (req, res, next) => {
   res.status(200).json({
     message: 'Password reset successfully. Please log in again.',
   });
-};
-
-//тестово створюю контролер для віддачіі сторінки ресету пароля
-export const getResetPasswordPage = async (req, res, next) => {
-  try {
-    const publicPath = path.resolve('src/templates');
-    return res.sendFile(path.join(publicPath, 'reset-password.html'));
-  } catch (err) {
-    return next(err);
-  }
 };
