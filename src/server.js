@@ -8,6 +8,7 @@ import { logger } from './middleware/logger.js';
 import { notFoundHandler } from './middleware/notFoundHandler.js';
 import { errorHandler } from './middleware/errorHandler.js';
 import authRoutes from './routes/authRoutes.js';
+import userRoutes from './routes/userRoutes.js'; // Імпортуємо маршрути користувачів
 import notesRoutes from './routes/notesRoutes.js';
 import helmet from 'helmet';
 import cookieParser from 'cookie-parser';
@@ -31,8 +32,9 @@ app.get('/', (req, res) => {
   res.status(200).json({ message: 'Hello world!' });
 });
 
-// підключаємо групу маршрутів авторизації та нотаток
+// підключаємо групу маршрутів авторизації користувачів та нотаток
 app.use(authRoutes);
+app.use(userRoutes);
 app.use(notesRoutes);
 
 // Додаємо middleware помилок celebrate

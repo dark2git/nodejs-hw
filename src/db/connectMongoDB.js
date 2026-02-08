@@ -6,6 +6,10 @@ export const connectMongoDB = async () => {
   try {
     const mongoUrl = process.env.MONGO_URL;
     await mongoose.connect(mongoUrl);
+    console.log(
+      '✅ Connected to database:',
+      mongoose.connection.db.databaseName,
+    );
     console.log('MongoDB connection established successfully');
     // Гарантуємо, що індекси в БД відповідають схемі
     await Note.syncIndexes();
